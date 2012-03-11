@@ -1,0 +1,71 @@
+<languageVersion : 1.0;>
+
+kernel FourColorMapping
+<   namespace : "at.leichtgewicht.color";
+    vendor : "Martin Heidegger";
+    version : 1;
+    description : "FourColor Mapping";
+>
+{
+    input image4 src;
+    
+    parameter float2 size
+    <
+        minValue : float2(0.0,0.0);
+        defaultValue : float2(200.0, 200.0);
+    >;
+    
+    parameter float4 a
+    <
+        minValue: float4( 0.0, 0.0, 0.0, 0.0 );
+        maxValue: float4( 1.0, 1.0, 1.0, 1.0 );
+    >;
+    
+    parameter float4 b
+    <
+        minValue: float4( 0.0, 0.0, 0.0, 0.0 );
+        maxValue: float4( 1.0, 1.0, 1.0, 1.0 );
+    >;
+    
+    parameter float4 c
+    <
+        minValue: float4( 0.0, 0.0, 0.0, 0.0 );
+        maxValue: float4( 1.0, 1.0, 1.0, 1.0 );
+    >;
+    
+    parameter float4 d
+    <
+        minValue: float4( 0.0, 0.0, 0.0, 0.0 );
+        maxValue: float4( 1.0, 1.0, 1.0, 1.0 );
+    >;
+    
+    parameter float alpha
+    <
+        minValue: float( 0.0 );
+        maxValue: float( 1.0 );
+        defaultValue: float( 1.0 );
+    >;
+    
+    output pixel4 dst;
+
+    void
+    evaluatePixel()
+    {
+        float2 coord = outCoord();
+        if( coord.x < size.x && coord.y < size.y ) {
+            float xFactor = coord.x / size.x;
+            float yFactor = coord.y / size.y;
+            dst = mix(
+                sample( src, coord ),
+                mix(
+                    mix( a, b, xFactor ),
+                    mix( c, d, xFactor ),
+                    yFactor
+                ),
+                alpha
+            );
+        } else {
+            dst = sampleLinear(src, coord );
+        }
+    }
+}

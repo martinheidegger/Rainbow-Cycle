@@ -1,0 +1,112 @@
+<languageVersion : 1.0;>
+
+kernel ABMapping
+<   namespace : "at.leichtgewicht.color";
+    vendor : "Martin Heidegger";
+    version : 1;
+    description : "AB Mapping - LAB Color Space";
+>
+{
+    input image4 src;
+    
+    parameter float2 size
+    <
+        minValue : float2(0.0,0.0);
+        defaultValue : float2(200.0, 200.0);
+    >;
+    
+    parameter float l
+    <
+        minValue: float( 0.0 );
+        maxValue: float( 100.0 );
+        defaultValue: float( 0.0 );
+    >;
+    
+    parameter float alpha
+    <
+        minValue: float( 0.0 );
+        maxValue: float( 1.0 );
+        defaultValue: float( 1.0 );
+    >;
+    
+    const float C16by116 = 16.0/116.0;
+    const float C1by2p4 = 1.0/2.4;
+    const float F = 7.787;
+    const float XC = 0.95047; //Observer= 2°, Illuminant= D65
+    const float XCF = XC / F;
+    const float ZC = 1.08883;
+    const float ZCF = ZC / F;
+    
+    output pixel4 dst;
+
+    void
+    evaluatePixel()
+    {
+        float2 coord = outCoord();
+        if( coord.x < size.x && coord.y < size.y ) {
+        
+            //float l = coord.x / size.x * 100.0;
+            float a = coord.x / size.x * 256.0 - 127.0;
+            float b = coord.y / size.y * 256.0 - 127.0;
+            
+            float y = (l + 16.0) / 116.0;
+            float x = a / 500.0 + y;
+            float z = y - b / 200.0;
+            
+            float kub = x * x * x;
+            if( kub > 0.008856  ) {
+                x = kub*XC;
+            } else {
+                x = (x - C16by116) * XCF;
+            }
+		
+            kub = y * y * y;
+            //Y = Y * 1
+            if( kub > 0.008856 ) {
+                y = kub;
+            } else {
+                y = (y - C16by116) / F;
+            }
+		
+            kub = z * z * z; 
+            if( kub > 0.008856 ) {
+                z = kub * ZC;
+            } else {
+                z = (z - C16by116) * ZCF;
+            }
+		
+            dst = float4(
+                (x * +3.2406 + y * -1.5372 + z * -0.4986),
+                (x * -0.9689 + y * +1.8758 + z * +0.0415),
+                (x * +0.0557 + y * -0.2040 + z * +1.0570),
+                1.0
+            );
+		
+            if( dst.r > 0.0031308 ) {
+                dst.r = (1.055 * pow(dst.r, C1by2p4) - 0.055);
+            } else {   
+                dst.r = 12.92 * dst.r;
+            }
+            
+            if( dst.g > 0.0031308 ) {
+                dst.g = (1.055 * pow(dst.g, C1by2p4) - 0.055);
+            } else {
+                dst.g = 12.92 * dst.g;
+            }
+            
+            if( dst.b > 0.0031308 ) {
+                dst.b = (1.055 * pow(dst.b, C1by2p4) - 0.055);
+            } else {
+                dst.b =12.92 * dst.b;
+            }
+		
+            dst.r = clamp( dst.r, 0.0, 1.0 );
+            dst.g = clamp( dst.g, 0.0, 1.0 );
+            dst.b = clamp( dst.b, 0.0, 1.0 );
+            
+            dst = mix( sampleLinear(src, coord ), dst, alpha );
+        } else {
+            dst = sampleLinear(src, coord );
+        }
+    }
+}

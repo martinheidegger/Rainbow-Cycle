@@ -1,0 +1,90 @@
+<languageVersion : 1.0;>
+
+kernel HSMapping
+<   namespace : "at.leichtgewicht.color";
+    vendor : "Martin Heidegger";
+    version : 1;
+    description : "HS Mapping - HSB Color Space";
+>
+{
+    input image4 src;
+    
+    parameter float2 size
+    <
+        minValue : float2(0.0,0.0);
+        defaultValue : float2(200.0, 200.0);
+    >;
+    
+    parameter float brightness
+    <
+        minValue: float( 0.0 );
+        maxValue: float( 1.0 );
+        defaultValue: float( 0.5 );
+    >;
+    
+    parameter float alpha
+    <
+        minValue: float( 0.0 );
+        maxValue: float( 1.0 );
+        defaultValue: float( 1.0 );
+    >;
+    
+    output pixel4 dst;
+
+    void
+    evaluatePixel()
+    {
+        float2 coord = outCoord();
+        if( coord.x < size.x && coord.y < size.y ) {
+            
+            float h = coord.x / size.x * 360.0;
+            float b = brightness;
+            float s = coord.y / size.y;
+            
+            if( b == 0.0 ) {
+                dst = float4( 0.0, 0.0, 0.0, 1.0 );
+            } else if( s == 0.0 ) {
+                dst = float4( b, b, b, 1.0 );
+            } else {
+                
+                float a = 1.0;
+                
+                // the color wheel consists of 6 sectors. Figure out which sector
+                // you're in.
+                float sectorPos = h / 60.0;
+                float sectorNumber = floor( sectorPos );
+                
+                // get the fractional part of the sector
+                float fractionalSector = sectorPos - sectorNumber;
+
+                // calculate values for the three axes of the color.
+                float p = b * (1.0 - s);
+                float q = b * (1.0 - (s * fractionalSector));
+                float t = b * (1.0 - (s * (1.0 - fractionalSector)));
+                
+                // assign the fractional colors to r, g, and b based on the sector
+                // the angle is in.
+                if( sectorNumber < 3.0 ) {
+                    if( sectorNumber < 1.0 ){
+                        dst = float4( b, t, p, a );
+                    } else if( sectorNumber < 2.0 ) {
+                        dst = float4( q, b, p, a );
+                    } else {
+                        dst = float4( p, b, t, a );
+                    }
+                } else {
+                    if( sectorNumber < 4.0 ){
+                        dst = float4( p, q, b, a );
+                    } else if( sectorNumber < 5.0 ) {
+                        dst = float4( t, p, b, a );
+                    } else {
+                        dst = float4( b, p, q, a );
+                    }
+                }
+            }
+            dst = mix( sampleLinear(src, coord ), dst, alpha );
+        } else {
+            dst = sampleLinear(src, coord );
+        }
+    }
+}
