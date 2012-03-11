@@ -11,6 +11,7 @@ package at.leichtgewicht.color.util {
 	 *   Enjoy!
 	 * 
 	 * @author Martin Heidegger mh@leichtgewicht.at
+	 * @see http://www.insanit.net/2009/08/01/
 	 */
 	public function UinttoRYB( rgb: uint ): uint {
 		var r: Number = ( rgb & 0xFF0000 ) >> 16;
